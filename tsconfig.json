@@ -1,0 +1,21 @@
+{
+  "include": [
+    "src/**/*",
+  ],
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "declaration": true,
+    "strict": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "outDir": "./lib",
+    "typeRoots": [
+      "node_modules/@types",
+      "src/@types"
+    ]
+  }
+}

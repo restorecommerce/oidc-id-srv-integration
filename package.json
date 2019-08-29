@@ -1,0 +1,52 @@
+{
+  "name": "oidc-id-srv-integration",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "tslint -p tsconfig.json",
+    "build:tsc": "tsc",
+    "build:clean": "rimraf lib",
+    "build": "npm-run-all lint build:clean build:tsc",
+    "postinstall": "tsc && cp -r ./src/views ./lib/views"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/restorecommerce/oidc-id-srv-integration.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/restorecommerce/oidc-id-srv-integration/issues"
+  },
+  "homepage": "https://github.com/restorecommerce/oidc-id-srv-integration#readme",
+  "dependencies": {
+    "oidc-provider": "^6.6.2",
+    "path": "^0.12.7",
+    "lodash": "^4.17.15"
+  },
+  "devDependencies": {
+    "@types/ioredis": "^4.0.15",
+    "@types/koa": "^2.0.49",
+    "@types/koa-bodyparser": "^4.3.0",
+    "@types/koa-ejs": "^4.2.0",
+    "@types/koa-mount": "^4.0.0",
+    "@types/koa-router": "^7.0.42",
+    "@types/koa-websocket": "^5.0.4",
+    "@types/lodash": "^4.14.138",
+    "@types/nanoid": "^2.0.0",
+    "ioredis": "^4.14.0",
+    "koa": "^2.8.1",
+    "koa-ejs": "^4.2.0",
+    "koa-mount": "^4.0.0",
+    "koa-router": "^7.4.0",
+    "koa-websocket": "^6.0.0",
+    "koa-bodyparser": "^4.2.1",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.0",
+    "tslint": "^5.19.0",
+    "typescript": "^3.6.2"
+  }
+}
