@@ -6,7 +6,6 @@
     "target": "ES6",
     "module": "commonjs",
     "declaration": true,
-    "strict": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
