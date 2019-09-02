@@ -1,6 +1,7 @@
 import {
     Config,
     Account,
+    JwtMeta,
     findAccountFunc,
     authenticateFunc,
     afterPasswordGrantHookFunc,
@@ -11,6 +12,7 @@ import { OIDCProvider } from "./provider";
 export {
     Config,
     Account,
+    JwtMeta,
     OIDCProvider,
     findAccountFunc,
     authenticateFunc,
