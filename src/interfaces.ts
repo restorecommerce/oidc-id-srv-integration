@@ -31,19 +31,24 @@ export abstract class Adapter {
   public abstract revokeByGrantId(grantId: string): Promise<any>;
 }
 
-export interface FindAccount {
+export interface Account {
   accountId: any;
   claims(): Promise<any>;
 }
 
+export type authenticateFunc = (credential: string, value: string, password: string) => Promise<Account | undefined>;
+export type findAccountFunc = (ctx: Koa.Context, sub: string, token: string) => Promise<Account>;
+export type afterPasswordGrantHookFunc =
+    (account: Account, accessToken: string, idToken: string, jwtMeta: JwtMeta) => void;
+
 export interface Config {
-  redisInstance: Redis.Redis;
+  redisInstance?: Redis.Redis;
   pathPrefix: string;
   clients?: any[];
   jwks?: {};
-  authenticate(credential: string, value: string, password: string): Promise<FindAccount | undefined>;
-  findAccount(ctx: Koa.Context, sub: string, token: string): Promise<FindAccount>;
-  afterPasswordGrantHook(account: FindAccount, accessToken: string, idToken: string, jwtMeta: JwtMeta): void;
+  authenticate: authenticateFunc;
+  findAccount: findAccountFunc;
+  afterPasswordGrantHook: afterPasswordGrantHookFunc;
 }
 
 export interface JwtMeta {
@@ -52,7 +57,7 @@ export interface JwtMeta {
   exp: number;
 }
 
-export interface PasswordGrantResponseBody {
+export interface TokenResponseBody {
   access_token?: string;
   id_token?: string;
   expires_in?: string;

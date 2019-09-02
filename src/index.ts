@@ -1,10 +1,18 @@
-import { Config, FindAccount } from "./interfaces";
+import {
+    Config,
+    Account,
+    findAccountFunc,
+    authenticateFunc,
+    afterPasswordGrantHookFunc,
+} from "./interfaces";
+
 import { OIDCProvider } from "./provider";
-import { RedisAdapter } from "./RedisAdapter";
 
 export {
-    OIDCProvider,
-    RedisAdapter,
-    FindAccount,
     Config,
+    Account,
+    OIDCProvider,
+    findAccountFunc,
+    authenticateFunc,
+    afterPasswordGrantHookFunc,
 };

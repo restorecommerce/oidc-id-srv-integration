@@ -6,7 +6,7 @@ import koaws from "koa-websocket";
 import * as path from "path";
 
 import Provider, { interactionPolicy } from "oidc-provider";
-import { Config, FindAccount, InvalidPasswordGrant, JwtMeta, PasswordGrantResponseBody } from "./interfaces";
+import { Config, Account, InvalidPasswordGrant, JwtMeta, TokenResponseBody } from "./interfaces";
 import { RedisAdapter, setRedisInstance } from "./RedisAdapter";
 import { setupRouts } from "./routs";
 import { epochTime, nanoid } from "./utls";
@@ -91,12 +91,12 @@ class OIDCProvider {
       credential: string,
       value: string,
       password: string,
-  ): Promise<PasswordGrantResponseBody> => {
+  ): Promise<TokenResponseBody> => {
     const client = await ctx.oidc.provider.Client.find(clientId);
 
     let account;
     try {
-      account = await this.authenticate(credential, value, password) as FindAccount;
+      account = await this.authenticate(credential, value, password) as Account;
     } catch (err) {
       throw new InvalidPasswordGrant("invalid credentials provided");
     }
