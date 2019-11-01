@@ -9,6 +9,11 @@ export class InvalidPasswordGrant extends errors.InvalidGrant {
   }
 }
 
+export interface OIDCPasswordGrantTypeConfig {
+    provider: any;
+    authenticate: AuthenticateFunc;
+}
+
 export abstract class Adapter {
   public name: string;
 
@@ -31,13 +36,20 @@ export abstract class Adapter {
   public abstract revokeByGrantId(grantId: string): Promise<any>;
 }
 
-export interface Account {
-  accountId: any;
-  claims(): Promise<any>;
+export interface Claims {
+    sub: string;
+    [key: string]: any;
 }
 
-export type authenticateFunc = (credential: string, value: string, password: string) => Promise<Account | undefined>;
-export type findAccountFunc = (ctx: Koa.Context, sub: string, token: string) => Promise<Account>;
+export interface Account {
+  accountId: any;
+  claims(use: string, scope: string): Promise<Claims>;
+}
+
+export type AuthenticateFunc = (value: string, password: string) => Promise<Account | undefined>;
+export type FindAccountFunc = (ctx: Koa.Context, sub: string, token: string) => Promise<Account>;
+export type PerformPasswordGrantFunc
+    = (ctx: Koa.Context, clientId: string, identifier: string, password: string) => Promise<TokenResponseBody>;
 export type afterPasswordGrantHookFunc =
     (account: Account, accessToken: string, idToken: string, jwtMeta: JwtMeta) => void;
 
@@ -46,8 +58,8 @@ export interface Config {
   pathPrefix: string;
   clients?: any[];
   jwks?: {};
-  authenticate: authenticateFunc;
-  findAccount: findAccountFunc;
+  authenticate: AuthenticateFunc;
+  findAccount: FindAccountFunc;
   afterPasswordGrantHook: afterPasswordGrantHookFunc;
 }
 
@@ -60,7 +72,7 @@ export interface JwtMeta {
 export interface TokenResponseBody {
   access_token?: string;
   id_token?: string;
-  expires_in?: string;
+  expires_at?: string;
   token_type?: string;
   scope?: string;
 }

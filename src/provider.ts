@@ -5,12 +5,19 @@ import * as Router from "koa-router";
 import * as path from "path";
 
 import Provider, { errors, interactionPolicy, KoaContextWithOIDC } from "oidc-provider";
-import { Config, Account, InvalidPasswordGrant, JwtMeta, TokenResponseBody } from "./interfaces";
+import {
+  Config,
+  InvalidPasswordGrant,
+  JwtMeta,
+  PerformPasswordGrantFunc,
+} from "./interfaces";
 import { RedisAdapter, setRedisInstance } from "./RedisAdapter";
 import { setupRouts } from "./routs";
-import { epochTime, nanoid } from "./utls";
+import { epochTime, nanoid } from "./utils";
+import { registerPasswordGrantType } from "./password-grant";
 
 class OIDCProvider {
+  public performPasswordGrant: PerformPasswordGrantFunc;
   private provider: Provider;
   private authenticate: any;
   private afterPasswordGrantHook: any;
@@ -29,12 +36,10 @@ class OIDCProvider {
 
     setupRouts(this.provider, router, config);
 
-    this.provider.registerGrantType(
-      "password",
-      this.passwordTokenExchangeHandler,
-      ["username", "password"],
-      [],
-    );
+    this.performPasswordGrant = registerPasswordGrantType({
+        provider: this.provider,
+        authenticate: config.authenticate,
+    });
 
     app.use(mount(config.pathPrefix, this.provider.app));
 
@@ -89,65 +94,16 @@ class OIDCProvider {
     }
   }
 
-  public performPasswordGrant = async (
-      ctx: Koa.Context,
-      clientId: string,
-      credential: string,
-      value: string,
-      password: string,
-  ): Promise<TokenResponseBody> => {
-    ctx = ctx as KoaContextWithOIDC;
-    const client = await ctx.oidc.provider.Client.find(clientId);
-    if (!client) {
-      throw new errors.InvalidClient("client not found");
-    }
-
-    let account;
-    try {
-      account = await this.authenticate(credential, value, password) as Account;
-    } catch (err) {
-      throw new InvalidPasswordGrant("invalid credentials provided");
-    }
-
-    if (!account) {
-      throw new InvalidPasswordGrant("invalid credentials provided");
-    }
-
-    const { AccessToken } = ctx.oidc.provider;
-    const at = new AccessToken({
-      gty: "password",
-      scope: "openid",
-      accountId: account.accountId,
-      claims: { rejected: [] },
-      client,
-      grantId: ctx.oidc.uid,
-      expiresWithSession: false,
-    });
-    ctx.oidc.entity("AccessToken", at);
-    const accessToken = await at.save();
-
-    const claims = await account.claims();
-
-    const { jwtMeta, idToken } = await this.generateIdToken(ctx, clientId, claims);
-    this.afterPasswordGrantHook(account, accessToken, idToken, jwtMeta);
-
-    return {
-      access_token: accessToken,
-      id_token: idToken,
-      expires_in: at.expiration.toString(),
-      token_type: at.tokenType,
-      scope: "openid",
-    };
-  }
-
   private getConfiguration = (config: Config) => {
     const ret: any = {
       findAccount: config.findAccount,
-      features: {
-        devInteractions: { enabled: false },
-        sessionManagement: { enabled: false },
-      },
-      interactions: {
+        features: {
+            introspection: { enabled: true },
+            revocation: { enabled: true },
+            devInteractions: { enabled: false },
+            sessionManagement: { enabled: false },
+        },
+        interactions: {
         policy: interactionPolicy.base(),
         url(ctx: Koa.Context, interaction: any) {
           return `${config.pathPrefix}/interaction/${ctx.oidc.uid}`;
@@ -235,7 +191,7 @@ class OIDCProvider {
         throw new errors.InvalidClient("client not set");
     }
 
-    ctx.body = await this.performPasswordGrant(ctx, client.clientId, "name", params.username, params.password);
+    ctx.body = await this.performPasswordGrant(ctx, client.clientId, params.username, params.password);
 
     await next();
   }

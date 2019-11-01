@@ -80,7 +80,7 @@ export function setupRouts(provider: Provider, router: Router, config: Config) {
 
       assert.equal(prompt.name, "login");
 
-      const account = await authenticate("name", ctx.request.body.login, ctx.request.body.password);
+      const account = await authenticate(ctx.request.body.login, ctx.request.body.password);
 
       if (!account) {
         return ctx.render("login", {

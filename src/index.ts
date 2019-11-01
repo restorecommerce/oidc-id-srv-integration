@@ -2,8 +2,8 @@ import {
     Config,
     Account,
     JwtMeta,
-    findAccountFunc,
-    authenticateFunc,
+    FindAccountFunc,
+    AuthenticateFunc,
     afterPasswordGrantHookFunc,
 } from "./interfaces";
 
@@ -14,7 +14,7 @@ export {
     Account,
     JwtMeta,
     OIDCProvider,
-    findAccountFunc,
-    authenticateFunc,
+    FindAccountFunc,
+    AuthenticateFunc,
     afterPasswordGrantHookFunc,
 };
