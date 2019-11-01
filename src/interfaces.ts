@@ -1,10 +1,10 @@
 import * as Redis from "ioredis";
 import * as Koa from "koa";
-import * as Provider from "oidc-provider";
+import { errors } from "oidc-provider";
 
-export class InvalidPasswordGrant extends Provider.errors.InvalidGrant {
+export class InvalidPasswordGrant extends errors.InvalidGrant {
   constructor(detail: string) {
-    super(400, "invalid_password_grant");
+    super("invalid_password_grant");
     Object.assign(this, { error_description: detail, error_detail: detail });
   }
 }

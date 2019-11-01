@@ -2,10 +2,9 @@ import Koa from "koa";
 import render from "koa-ejs";
 import mount from "koa-mount";
 import * as Router from "koa-router";
-import koaws from "koa-websocket";
 import * as path from "path";
 
-import Provider, { interactionPolicy } from "oidc-provider";
+import Provider, { errors, interactionPolicy, KoaContextWithOIDC } from "oidc-provider";
 import { Config, Account, InvalidPasswordGrant, JwtMeta, TokenResponseBody } from "./interfaces";
 import { RedisAdapter, setRedisInstance } from "./RedisAdapter";
 import { setupRouts } from "./routs";
@@ -16,7 +15,7 @@ class OIDCProvider {
   private authenticate: any;
   private afterPasswordGrantHook: any;
 
-  constructor(issuer: string, app: koaws.App, router: Router, config: Config) {
+  constructor(issuer: string, app: Koa, router: Router, config: Config) {
     this.provider = new Provider(issuer, this.getConfiguration(config));
     this.authenticate = config.authenticate;
     this.afterPasswordGrantHook = config.afterPasswordGrantHook;
@@ -47,6 +46,7 @@ class OIDCProvider {
       clientId: string,
       claims: any,
   ): Promise<{ jwtMeta: JwtMeta, idToken: string }> =>  {
+    ctx = ctx as KoaContextWithOIDC;
     const client = await ctx.oidc.provider.Client.find(clientId);
     ctx.oidc.entity("Client", client);
     const { IdToken } = ctx.oidc.provider;
@@ -58,8 +58,8 @@ class OIDCProvider {
     }, { ctx });
 
     token.set("jti", jti);
-    token.scope = "openid";
-    const tokenString = await token.issue({expiresAt: exp});
+    // token.scope = "openid";
+    const tokenString = await token.issue({use: "idtoken", expiresAt: exp}); // todo, ???
     const jwtMeta = { jti, exp, iat };
 
     return {jwtMeta, idToken: tokenString};
@@ -67,19 +67,23 @@ class OIDCProvider {
 
   public validateIdToken = async (clientId: string, idToken: string) => {
     const client = await this.provider.Client.find(clientId);
+    // @ts-ignore TS2339 validate sould be marked as static
     return await this.provider.IdToken.validate(idToken, client);
   }
 
   public getValidAccessToken = async (ctx: Koa.Context) => {
     const accessTokenString = ctx.oidc.getAccessToken({ acceptDPoP: true });
-    return await this.provider.AccessToken.find(accessTokenString);
+    const { AccessToken } = ctx.oidc.provider;
+    return await AccessToken.find(accessTokenString);
   }
 
   public destroyAccessToken = async (ctx: Koa.Context) => {
     try {
       const accessTokenString = ctx.oidc.getAccessToken({ acceptDPoP: true });
       const token = await this.provider.AccessToken.find(accessTokenString);
-      await token.destroy();
+      if (token) {
+          await token.destroy();
+      }
     } catch (err) {
       // console.log(err);
     }
@@ -92,7 +96,11 @@ class OIDCProvider {
       value: string,
       password: string,
   ): Promise<TokenResponseBody> => {
+    ctx = ctx as KoaContextWithOIDC;
     const client = await ctx.oidc.provider.Client.find(clientId);
+    if (!client) {
+      throw new errors.InvalidClient("client not found");
+    }
 
     let account;
     try {
@@ -126,7 +134,7 @@ class OIDCProvider {
     return {
       access_token: accessToken,
       id_token: idToken,
-      expires_in: at.expiration,
+      expires_in: at.expiration.toString(),
       token_type: at.tokenType,
       scope: "openid",
     };
@@ -216,8 +224,16 @@ class OIDCProvider {
     await next();
   }
 
-  private passwordTokenExchangeHandler = async (ctx: Koa.Context, next: () => Promise<any>) => {
+  private passwordTokenExchangeHandler = async (ctx: KoaContextWithOIDC, next: () => Promise<any>) => {
     const { params, client } = ctx.oidc;
+
+    if (!params) {
+        throw new InvalidPasswordGrant("params missing");
+    }
+
+    if (!client) {
+        throw new errors.InvalidClient("client not set");
+    }
 
     ctx.body = await this.performPasswordGrant(ctx, client.clientId, "name", params.username, params.password);
 

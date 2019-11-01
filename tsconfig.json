@@ -1,6 +1,6 @@
 {
   "include": [
-    "src/**/*",
+    "src/**/*"
   ],
   "compilerOptions": {
     "target": "ES6",
@@ -11,10 +11,6 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "outDir": "./lib",
-    "typeRoots": [
-      "node_modules/@types",
-      "src/@types"
-    ]
+    "outDir": "./lib"
   }
 }

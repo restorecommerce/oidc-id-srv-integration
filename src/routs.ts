@@ -11,7 +11,7 @@ export function setupRouts(provider: Provider, router: Router, config: Config) {
   const { pathPrefix, authenticate } = config;
 
   router.get(`${pathPrefix}/interaction/:uid`, async (ctx: any, next: any) => {
-    const { uid, prompt, params, session } = await provider.interactionDetails(ctx.req);
+    const { uid, prompt, params, session } = await provider.interactionDetails(ctx.req, ctx.res);
     const client = await provider.Client.find(params.client_id);
 
     switch (prompt.name) {
@@ -75,7 +75,7 @@ export function setupRouts(provider: Provider, router: Router, config: Config) {
 
   router.post(`${pathPrefix}/interaction/:uid/login`, body, async (ctx: any, next: any) => {
     try {
-      const { uid, prompt, params, session } = await provider.interactionDetails(ctx.req);
+      const { uid, prompt, params, session } = await provider.interactionDetails(ctx.req, ctx.res);
       const client = await provider.Client.find(params.client_id);
 
       assert.equal(prompt.name, "login");
@@ -120,7 +120,7 @@ export function setupRouts(provider: Provider, router: Router, config: Config) {
   });
 
   router.post(`${pathPrefix}/interaction/:uid/confirm`, body, async (ctx: any, next: any) => {
-    const { prompt: { name } } = await provider.interactionDetails(ctx.req); // name, details
+    const { prompt: { name } } = await provider.interactionDetails(ctx.req, ctx.res); // name, details
     assert.equal(name, "consent");
 
     try {
