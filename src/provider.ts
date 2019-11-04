@@ -58,7 +58,7 @@ class OIDCProvider {
     }, { ctx });
 
     token.set("jti", jti);
-    // token.scope = "openid";
+    token.scope = "openid";
     const tokenString = await token.issue({use: "idtoken", expiresAt: exp}); // todo, ???
     const jwtMeta = { jti, exp, iat };
 
