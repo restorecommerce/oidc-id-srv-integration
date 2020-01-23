@@ -1,20 +1,20 @@
 import {
-    Config,
-    Account,
-    JwtMeta,
-    findAccountFunc,
-    authenticateFunc,
-    afterPasswordGrantHookFunc,
-} from "./interfaces";
+  Config,
+  Account,
+  JwtMeta,
+  findAccountFunc,
+  authenticateFunc,
+  afterPasswordGrantHookFunc,
+} from './interfaces';
 
-import { OIDCProvider } from "./provider";
+import { OIDCProvider } from './provider';
 
 export {
-    Config,
-    Account,
-    JwtMeta,
-    OIDCProvider,
-    findAccountFunc,
-    authenticateFunc,
-    afterPasswordGrantHookFunc,
+  Config,
+  Account,
+  JwtMeta,
+  OIDCProvider,
+  findAccountFunc,
+  authenticateFunc,
+  afterPasswordGrantHookFunc,
 };

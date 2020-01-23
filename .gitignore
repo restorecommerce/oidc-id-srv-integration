@@ -1,10 +1,14 @@
-# Build
-/lib
+*~
+*.bk
+*.d.ts
+*.js
+*.log
 
-# Dependency directory
-/node_modules
+lib
+node_modules
+npm-debug.log
 
 # Editors
-.vscode
 .idea
 *.iml
+.vscode

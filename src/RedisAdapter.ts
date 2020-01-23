@@ -5,33 +5,33 @@
  * Example used:
  * https://github.com/panva/node-oidc-provider/blob/master/example/adapters/redis.js
  */
-import * as Redis from "ioredis";
-import * as _ from "lodash";
-import { Adapter } from "./interfaces";
+import * as Redis from 'ioredis';
+import * as _ from 'lodash';
+import { Adapter } from './interfaces';
 
 let clientInstance: Redis.Redis;
-function setRedisInstance(instance: Redis.Redis) {
-    clientInstance = instance;
-}
+const setRedisInstance = (instance: Redis.Redis) => {
+  clientInstance = instance;
+};
 
-const prefix = "oidc";
+const prefix = 'oidc';
 
-function grantKeyFor(id: string) {
+const grantKeyFor = (id: string) => {
   return `${prefix}grant:${id}`;
-}
+};
 
-function userCodeKeyFor(userCode: string) {
+const userCodeKeyFor = (userCode: string) => {
   return `${prefix}userCode:${userCode}`;
-}
+};
 
-function uidKeyFor(uid: string) {
+const uidKeyFor = (uid: string) => {
   return `${prefix}uid:${uid}`;
-}
+};
 
 const consumable = new Set([
-  "AuthorizationCode",
-  "RefreshToken",
-  "DeviceCode",
+  'AuthorizationCode',
+  'RefreshToken',
+  'DeviceCode',
 ]);
 
 class RedisAdapter extends Adapter {
@@ -39,7 +39,7 @@ class RedisAdapter extends Adapter {
   constructor(name: string) {
     super(name);
     if (!clientInstance) {
-      throw Error("Need to call setRedisInstance before using RedisAdapter");
+      throw Error('Need to call setRedisInstance before using RedisAdapter');
     }
   }
 
@@ -49,7 +49,7 @@ class RedisAdapter extends Adapter {
       ? { payload: JSON.stringify(payload) } : JSON.stringify(payload);
 
     const multi = clientInstance.multi();
-    multi[consumable.has(this.name) ? "hmset" : "set"](key, store);
+    multi[consumable.has(this.name) ? 'hmset' : 'set'](key, store);
 
     if (expiresIn) {
       multi.expire(key, expiresIn);
@@ -91,7 +91,7 @@ class RedisAdapter extends Adapter {
       return undefined;
     }
 
-    if (typeof data === "string") {
+    if (typeof data === 'string') {
       return JSON.parse(data);
     }
     const { payload, ...rest } = data;
@@ -112,7 +112,7 @@ class RedisAdapter extends Adapter {
   }
 
   public async consume(id: string) {
-    await clientInstance.hset(this.key(id), "consumed", Math.floor(Date.now() / 1000));
+    await clientInstance.hset(this.key(id), 'consumed', Math.floor(Date.now() / 1000));
   }
 
   public async destroy(id: string) {

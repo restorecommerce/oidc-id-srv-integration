@@ -1,14 +1,14 @@
-import Koa from "koa";
-import render from "koa-ejs";
-import mount from "koa-mount";
-import * as Router from "koa-router";
-import * as path from "path";
+import Koa from 'koa';
+import render from 'koa-ejs';
+import mount from 'koa-mount';
+import * as Router from 'koa-router';
+import * as path from 'path';
 
-import Provider, { errors, interactionPolicy, KoaContextWithOIDC } from "oidc-provider";
-import { Config, Account, InvalidPasswordGrant, JwtMeta, TokenResponseBody } from "./interfaces";
-import { RedisAdapter, setRedisInstance } from "./RedisAdapter";
-import { setupRouts } from "./routs";
-import { epochTime, nanoid } from "./utls";
+import Provider, { errors, interactionPolicy, KoaContextWithOIDC } from 'oidc-provider';
+import { Config, Account, InvalidPasswordGrant, JwtMeta, TokenResponseBody } from './interfaces';
+import { RedisAdapter, setRedisInstance } from './RedisAdapter';
+import { setupRouts } from './routs';
+import { epochTime, nanoid } from './utls';
 
 class OIDCProvider {
   private provider: Provider;
@@ -22,17 +22,17 @@ class OIDCProvider {
 
     render(app, {
       cache: false,
-      viewExt: "ejs",
-      layout: "_layout",
-      root: path.join(__dirname, "/views"),
+      viewExt: 'ejs',
+      layout: '_layout',
+      root: path.join(__dirname, '/views'),
     });
 
     setupRouts(this.provider, router, config);
 
     this.provider.registerGrantType(
-      "password",
+      'password',
       this.passwordTokenExchangeHandler,
-      ["username", "password"],
+      ['username', 'password'],
       [],
     );
 
@@ -42,13 +42,13 @@ class OIDCProvider {
   }
 
   public generateIdToken = async (
-      ctx: Koa.Context,
-      clientId: string,
-      claims: any,
-  ): Promise<{ jwtMeta: JwtMeta, idToken: string }> =>  {
+    ctx: Koa.Context,
+    clientId: string,
+    claims: any,
+  ): Promise<{ jwtMeta: JwtMeta; idToken: string }> =>  {
     ctx = ctx as KoaContextWithOIDC;
     const client = await ctx.oidc.provider.Client.find(clientId);
-    ctx.oidc.entity("Client", client);
+    ctx.oidc.entity('Client', client);
     const { IdToken } = ctx.oidc.provider;
     const jti = nanoid();
     const iat = epochTime(); // new IdToken will internally create timestamp
@@ -57,73 +57,73 @@ class OIDCProvider {
       ...claims,
     }, { ctx });
 
-    token.set("jti", jti);
-    token.scope = "openid";
-    const tokenString = await token.issue({use: "idtoken", expiresAt: exp}); // todo, ???
+    token.set('jti', jti);
+    token.scope = 'openid';
+    const tokenString = await token.issue({use: 'idtoken', expiresAt: exp}); // todo, ???
     const jwtMeta = { jti, exp, iat };
 
     return {jwtMeta, idToken: tokenString};
-  }
+  };
 
   public validateIdToken = async (clientId: string, idToken: string) => {
     const client = await this.provider.Client.find(clientId);
     // @ts-ignore TS2339 validate sould be marked as static
     return await this.provider.IdToken.validate(idToken, client);
-  }
+  };
 
   public getValidAccessToken = async (ctx: Koa.Context) => {
     const accessTokenString = ctx.oidc.getAccessToken({ acceptDPoP: true });
     const { AccessToken } = ctx.oidc.provider;
     return await AccessToken.find(accessTokenString);
-  }
+  };
 
   public destroyAccessToken = async (ctx: Koa.Context) => {
     try {
       const accessTokenString = ctx.oidc.getAccessToken({ acceptDPoP: true });
       const token = await this.provider.AccessToken.find(accessTokenString);
       if (token) {
-          await token.destroy();
+        await token.destroy();
       }
     } catch (err) {
       // console.log(err);
     }
-  }
+  };
 
   public performPasswordGrant = async (
-      ctx: Koa.Context,
-      clientId: string,
-      credential: string,
-      value: string,
-      password: string,
+    ctx: Koa.Context,
+    clientId: string,
+    credential: string,
+    value: string,
+    password: string,
   ): Promise<TokenResponseBody> => {
     ctx = ctx as KoaContextWithOIDC;
     const client = await ctx.oidc.provider.Client.find(clientId);
     if (!client) {
-      throw new errors.InvalidClient("client not found");
+      throw new errors.InvalidClient('client not found');
     }
 
     let account;
     try {
       account = await this.authenticate(credential, value, password) as Account;
     } catch (err) {
-      throw new InvalidPasswordGrant("invalid credentials provided");
+      throw new InvalidPasswordGrant('invalid credentials provided');
     }
 
     if (!account) {
-      throw new InvalidPasswordGrant("invalid credentials provided");
+      throw new InvalidPasswordGrant('invalid credentials provided');
     }
 
     const { AccessToken } = ctx.oidc.provider;
     const at = new AccessToken({
-      gty: "password",
-      scope: "openid",
+      gty: 'password',
+      scope: 'openid',
       accountId: account.accountId,
       claims: { rejected: [] },
       client,
       grantId: ctx.oidc.uid,
       expiresWithSession: false,
     });
-    ctx.oidc.entity("AccessToken", at);
+    ctx.oidc.entity('AccessToken', at);
     const accessToken = await at.save();
 
     const claims = await account.claims();
@@ -136,9 +136,9 @@ class OIDCProvider {
       id_token: idToken,
       expires_in: at.expiration.toString(),
       token_type: at.tokenType,
-      scope: "openid",
+      scope: 'openid',
     };
-  }
+  };
 
   private getConfiguration = (config: Config) => {
     const ret: any = {
@@ -153,27 +153,27 @@ class OIDCProvider {
           return `${config.pathPrefix}/interaction/${ctx.oidc.uid}`;
         },
       },
-      scopes: ["openid", "offline_access"],
+      scopes: ['openid', 'offline_access'],
       cookies: {
         keys: [], // todo, there are some errors when setting this option, and is it really needed?
         long: {
           httpOnly: true,
           maxAge: 1209600000,
           overwrite: true,
-          sameSite: "none",
+          sameSite: 'none',
           signed: false,
         },
         names: {
-          interaction: "_interaction",
-          resume: "_interaction_resume",
-          session: "_session",
-          state: "_state",
+          interaction: '_interaction',
+          resume: '_interaction_resume',
+          session: '_session',
+          state: '_state',
         },
         short: {
           httpOnly: true,
           maxAge: 600000,
           overwrite: true,
-          sameSite: "lax",
+          sameSite: 'lax',
           signed: false,
         },
       },
@@ -182,10 +182,10 @@ class OIDCProvider {
         sid: null,
         auth_time: null,
         iss: null,
-        openid: ["sub", "data"],
+        openid: ['sub', 'data'],
       },
       formats: {
-        AccessToken: "opaque", // opaque, jwt
+        AccessToken: 'opaque', // opaque, jwt
         ClientCredentials: undefined,
       },
       ttl: {
@@ -194,10 +194,10 @@ class OIDCProvider {
       },
       issueRefreshToken: async (ctx: Koa.Context, client: any, code: any) => {
         // never allow for implicit or password flow
-        if (client.grantTypes.includes("implicit") || client.grantTypes.includes("password")) {
+        if (client.grantTypes.includes('implicit') || client.grantTypes.includes('password')) {
           return false;
         }
-        return client.grantTypes.includes("refresh_token");
+        return client.grantTypes.includes('refresh_token');
       },
     };
 
@@ -215,30 +215,30 @@ class OIDCProvider {
     }
 
     return ret;
-  }
+  };
 
   private middleware = async (ctx: Koa.Context, next: () => Promise<any>) => {
     if (!ctx.oidc) {
-      Object.defineProperty(ctx, "oidc", { value: new this.provider.OIDCContext(ctx) });
+      Object.defineProperty(ctx, 'oidc', { value: new this.provider.OIDCContext(ctx) });
     }
     await next();
-  }
+  };
 
   private passwordTokenExchangeHandler = async (ctx: KoaContextWithOIDC, next: () => Promise<any>) => {
     const { params, client } = ctx.oidc;
 
     if (!params) {
-        throw new InvalidPasswordGrant("params missing");
+      throw new InvalidPasswordGrant('params missing');
     }
 
     if (!client) {
-        throw new errors.InvalidClient("client not set");
+      throw new errors.InvalidClient('client not set');
     }
 
-    ctx.body = await this.performPasswordGrant(ctx, client.clientId, "name", params.username, params.password);
+    ctx.body = await this.performPasswordGrant(ctx, client.clientId, 'name', params.username, params.password);
 
     await next();
-  }
+  };
 }
 
 export { OIDCProvider };
