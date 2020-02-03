@@ -15,7 +15,7 @@ export const setupRouts = (provider: Provider, router: Router, config: Config) =
     const client = await provider.Client.find(params.client_id);
 
     switch (prompt.name) {
-      case 'select_account': {
+      case 'select_account' as string: {
         if (!session) {
           return provider.interactionFinished(ctx.req, ctx.res, {
             select_account: {},
