@@ -113,20 +113,20 @@ class OIDCProvider {
       throw new InvalidPasswordGrant('invalid credentials provided');
     }
 
+    const claims = await account.claims();
+
     const { AccessToken } = ctx.oidc.provider;
     const at = new AccessToken({
       gty: 'password',
       scope: 'openid',
       accountId: account.accountId,
-      claims: { rejected: [] },
+      claims,
       client,
       grantId: ctx.oidc.uid,
       expiresWithSession: false,
     });
     ctx.oidc.entity('AccessToken', at);
     const accessToken = await at.save();
-
-    const claims = await account.claims();
 
     const { jwtMeta, idToken } = await this.generateIdToken(ctx, clientId, claims);
     this.afterPasswordGrantHook(account, accessToken, idToken, jwtMeta);
@@ -137,6 +137,7 @@ class OIDCProvider {
       expires_in: at.expiration.toString(),
       token_type: at.tokenType,
       scope: 'openid',
+      claims
     };
   };
 

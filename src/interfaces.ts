@@ -63,4 +63,5 @@ export interface TokenResponseBody {
   expires_in?: string;
   token_type?: string;
   scope?: string;
+  claims?: any;
 }
