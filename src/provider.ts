@@ -8,15 +8,20 @@ import Provider, { errors, interactionPolicy, KoaContextWithOIDC } from 'oidc-pr
 import { Config, Account, InvalidPasswordGrant, JwtMeta, TokenResponseBody } from './interfaces';
 import { setupRouts } from './routs';
 import { epochTime, nanoid } from './utls';
-import { EndpointHandler } from './EndpointHandler';
 import { createIdentityServiceAdapterClass } from './tokenservice-adapter';
 import logger from './logger';
 import { cfg } from './config';
 import { getRedisInstance } from './redis';
+import { Client } from '@restorecommerce/grpc-client';
 
-const authEPHandler = new EndpointHandler('authentication_log');
-const tokenEPHandler = new EndpointHandler('token');
-const tokenService = tokenEPHandler.getResourceService();
+// TODO add authEP handler
+// const authEPHandler = new EndpointHandler('authentication_log');
+
+const grpcTokenConfig = cfg.get('client:token');
+const tokenClient = new Client(grpcTokenConfig, logger);
+const tokenService: any = tokenClient.connect().then((service) => {
+  return service;
+});
 const adapter = createIdentityServiceAdapterClass(tokenService, logger, getRedisInstance(cfg.get('redis:db-indexes:db-findByToken')));
 
 

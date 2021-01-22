@@ -1,10 +1,7 @@
-import { EndpointHandler } from './EndpointHandler';
 import { AdapterConstructor, Adapter, AdapterPayload } from 'oidc-provider';
 import { Logger } from 'winston';
 import { Redis } from 'ioredis';
 import { cfg } from './config';
-
-const tokenEPHandler = new EndpointHandler('token');
 
 const unmarshallProtobufAny = (msg: any): any => JSON.parse(msg.value.toString());
 const marshallProtobufAny = (msg: any): any => {
@@ -31,8 +28,9 @@ export interface DestroyRequest {
 }
 
 export interface ConsumeRequest {
-  type: string;
+  type?: string;
   id: string;
+  subject?: any;
 }
 
 export interface UpsertRequest {
@@ -91,6 +89,7 @@ export function createIdentityServiceAdapterClass(tokenService: TokenService, lo
 
       if (delegate(this.type)) {
         logger.debug('Invoking token service upsert', { type: this.type });
+        tokenService = await tokenService;
         return await tokenService.upsert({
           expires_in: expiresIn,
           id,
@@ -173,9 +172,7 @@ export function createIdentityServiceAdapterClass(tokenService: TokenService, lo
     }
 
     async consume(id: any) {
-      const tokenService = tokenEPHandler.getResourceService();
       await tokenService.consume({ id });
-
       if (delegate(this.type)) {
         logger.debug('Invoking token service consume', { type: this.type });
         return tokenService.consume({
