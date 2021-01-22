@@ -6,9 +6,19 @@ import * as path from 'path';
 
 import Provider, { errors, interactionPolicy, KoaContextWithOIDC } from 'oidc-provider';
 import { Config, Account, InvalidPasswordGrant, JwtMeta, TokenResponseBody } from './interfaces';
-import { RedisAdapter, setRedisInstance } from './RedisAdapter';
 import { setupRouts } from './routs';
 import { epochTime, nanoid } from './utls';
+import { EndpointHandler } from './EndpointHandler';
+import { createIdentityServiceAdapterClass } from './tokenservice-adapter';
+import logger from './logger';
+import { cfg } from './config';
+import { getRedisInstance } from './redis';
+
+const authEPHandler = new EndpointHandler('authentication_log');
+const tokenEPHandler = new EndpointHandler('token');
+const tokenService = tokenEPHandler.getResourceService();
+const adapter = createIdentityServiceAdapterClass(tokenService, logger, getRedisInstance(cfg.get('redis:db-indexes:db-findByToken')));
+
 
 class OIDCProvider {
   private provider: Provider;
@@ -45,7 +55,7 @@ class OIDCProvider {
     ctx: Koa.Context,
     clientId: string,
     claims: any,
-  ): Promise<{ jwtMeta: JwtMeta; idToken: string }> =>  {
+  ): Promise<{ jwtMeta: JwtMeta; idToken: string }> => {
     ctx = ctx as KoaContextWithOIDC;
     const client = await ctx.oidc.provider.Client.find(clientId);
     ctx.oidc.entity('Client', client);
@@ -59,10 +69,10 @@ class OIDCProvider {
 
     token.set('jti', jti);
     token.scope = 'openid';
-    const tokenString = await token.issue({use: 'idtoken', expiresAt: exp}); // todo, ???
+    const tokenString = await token.issue({ use: 'idtoken', expiresAt: exp }); // todo, ???
     const jwtMeta = { jti, exp, iat };
 
-    return {jwtMeta, idToken: tokenString};
+    return { jwtMeta, idToken: tokenString };
   };
 
   public validateIdToken = async (clientId: string, idToken: string) => {
@@ -193,6 +203,7 @@ class OIDCProvider {
         AccessToken: 86400 * 7, // 1 week
         IdToken: 86400, // 1 day
       },
+      adapter,
       issueRefreshToken: async (ctx: Koa.Context, client: any, code: any) => {
         // never allow for implicit or password flow
         if (client.grantTypes.includes('implicit') || client.grantTypes.includes('password')) {
@@ -202,10 +213,10 @@ class OIDCProvider {
       },
     };
 
-    if (config.redisInstance) {
-      setRedisInstance(config.redisInstance);
-      ret.adapter = RedisAdapter;
-    }
+    // if (config.redisInstance) {
+    //   setRedisInstance(config.redisInstance);
+    //   ret.adapter = RedisAdapter;
+    // }
 
     if (config.clients) {
       ret.clients = config.clients;
