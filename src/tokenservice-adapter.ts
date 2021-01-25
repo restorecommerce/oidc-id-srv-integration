@@ -110,6 +110,7 @@ export function createIdentityServiceAdapterClass(tokenService: TokenService, lo
       };
       if (delegate(this.type)) {
         logger.debug('Invoking token service find', { type: this.type });
+        tokenService = await tokenService;
         const response = await tokenService.find(findReq);
         let tokenResponse;
         if (response && response.data) {
