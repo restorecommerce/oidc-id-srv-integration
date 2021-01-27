@@ -2,6 +2,7 @@ import { AdapterConstructor, Adapter, AdapterPayload } from 'oidc-provider';
 import { Logger } from 'winston';
 import { Redis } from 'ioredis';
 import { cfg } from './config';
+import * as _ from 'lodash';
 
 const unmarshallProtobufAny = (msg: any): any => JSON.parse(msg.value.toString());
 const marshallProtobufAny = (msg: any): any => {
@@ -113,7 +114,7 @@ export function createIdentityServiceAdapterClass(tokenService: TokenService, lo
         tokenService = await tokenService;
         const response = await tokenService.find(findReq);
         let tokenResponse;
-        if (response && response.data) {
+        if (!_.isEmpty(response?.data?.value)) {
           tokenResponse = unmarshallProtobufAny(response.data);
           tokenResponse.clientId = cfg.get('oidc:client_id');
         }
